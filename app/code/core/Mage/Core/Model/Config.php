@@ -1273,7 +1273,7 @@ class Mage_Core_Model_Config extends Mage_Core_Model_Config_Base
         // First - check maybe the entity class was rewritten
         $className = '';
         if (isset($config->rewrite->$class)) {
-            $className = (string)$config->rewrite->$class;
+            $className = trim((string) $config->rewrite->$class);
         } else {
             /**
              * Backwards compatibility for pre-MMDB extensions.
@@ -1284,12 +1284,10 @@ class Mage_Core_Model_Config extends Mage_Core_Model_Config_Base
                 $deprecatedNode = $config->deprecatedNode;
                 $configOld = $this->_xml->global->{$groupType.'s'}->$deprecatedNode;
                 if (isset($configOld->rewrite->$class)) {
-                    $className = (string) $configOld->rewrite->$class;
+                    $className = trim((string) $configOld->rewrite->$class);
                 }
             }
         }
-
-        $className = trim($className);
 
         // Second - if entity is not rewritten then use class prefix to form class name
         if (empty($className)) {
@@ -1317,7 +1315,7 @@ class Mage_Core_Model_Config extends Mage_Core_Model_Config_Base
      */
     public function getBlockClassName($blockType)
     {
-        if (strpos($blockType, '/')===false) {
+        if (strpos($blockType, '/') === false) {
             return $blockType;
         }
         return $this->getGroupedClassName('block', $blockType);
@@ -1367,11 +1365,13 @@ class Mage_Core_Model_Config extends Mage_Core_Model_Config_Base
      */
     public function getModelClassName($modelClass)
     {
-        $modelClass = trim($modelClass);
-        if (strpos($modelClass, '/')===false) {
-            return $modelClass;
+        if (empty($modelClass)) {
+            return '';
         }
-        return $this->getGroupedClassName('model', $modelClass);
+        if (strpos($modelClass, '/') === false) {
+            return trim($modelClass);
+        }
+        return $this->getGroupedClassName('model', trim($modelClass));
     }
 
     /**

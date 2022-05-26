@@ -340,7 +340,7 @@ class Varien_Object implements ArrayAccess
         $default = null;
 
         // accept a/b/c as ['a']['b']['c']
-        if (strpos($key,'/')) {
+        if (is_string($key) && strpos($key, '/')) {
             $keyArr = explode('/', $key);
             $data = $this->_data;
             foreach ($keyArr as $i=>$k) {
@@ -609,7 +609,7 @@ class Varien_Object implements ArrayAccess
         } else {
             preg_match_all('/\{\{([a-z0-9_]+)\}\}/is', $format, $matches);
             foreach ($matches[1] as $var) {
-                $format = str_replace('{{'.$var.'}}', $this->getData($var), $format);
+                $format = str_replace('{{'.$var.'}}', (string) $this->getData($var), $format);
             }
             $str = $format;
         }
