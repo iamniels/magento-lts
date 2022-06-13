@@ -428,7 +428,6 @@ class Mage_Core_Model_Translate
             $result = false;
         }
 
-        $result = !empty($args) ? @vsprintf($translated, $args) : false;
         if ($result === false) {
             $result = $translated;
         }
