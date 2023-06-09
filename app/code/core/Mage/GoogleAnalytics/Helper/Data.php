@@ -30,6 +30,7 @@ class Mage_GoogleAnalytics_Helper_Data extends Mage_Core_Helper_Abstract
     public const XML_PATH_ANONYMIZATION = 'google/analytics/anonymization';
     public const XML_PATH_DEBUG         = 'google/analytics/debug';
     public const XML_PATH_USERID        = 'google/analytics/user_id';
+    public const XML_PATH_URL           = 'google/analytics/container_url';
 
     /**
      * @var string google analytics 4
@@ -82,6 +83,12 @@ class Mage_GoogleAnalytics_Helper_Data extends Mage_Core_Helper_Abstract
     public function getAccountId($store = null)
     {
         return Mage::getStoreConfig(self::XML_PATH_ACCOUNT, $store);
+    }
+
+    public function getAnalytics4Url($store = null) : string
+    {
+        $config = trim(Mage::getStoreConfig(self::XML_PATH_URL, $store), " /");
+        return $config ?: 'https://www.googletagmanager.com';
     }
 
     /**

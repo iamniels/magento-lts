@@ -83,6 +83,17 @@
                                 <type>analytics4</type>
                             </depends>
                         </debug>
+                        <container_url>
+                            <label>Container URL</label>
+                            <sort_order>23</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Starts with https://</comment>
+                            <depends>
+                                <type>analytics4</type>
+                            </depends>
+                        </container_url>
                         <anonymization translate="label">
                             <label>Enable IP anonymization</label>
                             <frontend_type>select</frontend_type>

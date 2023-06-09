@@ -21,7 +21,7 @@ $_accountId = $_helper->getAccountId();
 <?php if (!$this->helper('core/cookie')->isUserNotAllowSaveCookie()): ?>
     <?php if ($_helper->isUseAnalytics4()): ?>
         <!-- BEGIN GOOGLE ANALYTICS 4 CODE -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=<?= $_accountId ?>"></script>
+        <script async src="<?php echo $_helper->getAnalytics4Url(); ?>/gtag/js?id=<?= $_accountId ?>"></script>
         <script>
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
