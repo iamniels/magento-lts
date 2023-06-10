@@ -92,15 +92,16 @@ class Mage_GoogleAnalytics_Block_Ga extends Mage_Core_Block_Template
         $trackingCode = "
 gtag('js', new Date());
 ";
-        if (!$this->helper('googleanalytics')->isDebugModeEnabled()) {
-            $trackingCode.= "
-gtag('config', '{$this->jsQuoteEscape($accountId)}');
+        $config = [
+            'debug_mode' => $this->helper('googleanalytics')->isDebugModeEnabled(),
+            'transport_url' => $this->helper('googleanalytics')->getAnalytics4Url()
+        ];
+
+
+        $trackingCode.= "
+gtag('config', '{$this->jsQuoteEscape($accountId)}', ". json_encode($config) ."});
 ";
-        } else {
-            $trackingCode.= "
-gtag('config', '{$this->jsQuoteEscape($accountId)}', { 'debug_mode': true });
-";
-        }
+
 
         //add user_id
         if ($this->helper('googleanalytics')->isUserIdEnabled() && Mage::getSingleton('customer/session')->isLoggedIn()) {
