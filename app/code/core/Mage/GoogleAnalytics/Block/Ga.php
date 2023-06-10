@@ -99,7 +99,7 @@ gtag('js', new Date());
 
 
         $trackingCode.= "
-gtag('config', '{$this->jsQuoteEscape($accountId)}', ". json_encode($config) ."});
+gtag('config', '{$this->jsQuoteEscape($accountId)}', ". json_encode($config) .");
 ";
 
 
