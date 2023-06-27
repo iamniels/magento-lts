@@ -263,7 +263,8 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
         }
 
         //category page
-        elseif ($moduleName == 'catalog' && $controllerName == 'category') {
+        // Disable because Call to a member function getLimit() on bool in /var/www/app/code/core/Mage/GoogleAnalytics/Block/Ga.php:273
+        elseif (false && $moduleName == 'catalog' && $controllerName == 'category') {
             $layer = Mage::getSingleton('catalog/layer');
             $category = $layer->getCurrentCategory();
             $productCollection = clone $layer->getProductCollection();
