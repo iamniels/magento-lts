@@ -284,8 +284,8 @@ class Mage_Sales_Model_Order_Creditmemo_Item extends Mage_Core_Model_Abstract
 
         if (!$this->isLast()) {
             $availableQty = $orderItemQtyInvoiced - $orderItem->getQtyRefunded();
-            $rowTotal     = $creditmemo->roundPrice($rowTotal / $availableQty * $this->getQty());
-            $baseRowTotal = $creditmemo->roundPrice($baseRowTotal / $availableQty * $this->getQty(), 'base');
+            $rowTotal     = $availableQty ? $creditmemo->roundPrice($rowTotal / $availableQty * $this->getQty()) : 0;
+            $baseRowTotal = $availableQty ? $creditmemo->roundPrice($baseRowTotal / $availableQty * $this->getQty(), 'base') : 0;
         }
         $this->setRowTotal($rowTotal);
         $this->setBaseRowTotal($baseRowTotal);
