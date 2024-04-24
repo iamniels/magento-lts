@@ -230,6 +230,13 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
         return implode("\n", $result);
     }
 
+    protected function getPriceExclVAT(Mage_Catalog_Model_Product $product, bool $formatted = true) : string | float
+    {
+        $taxHelper = Mage::helper('tax');
+        $price = $taxHelper->getPrice($product, $product->getPrice(), false);
+        return $formatted ? number_format($price, 2) : $price;
+    }
+
     /**
      * @return string
      * @throws Mage_Core_Model_Store_Exception
@@ -248,7 +255,7 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
             $category = Mage::registry('current_category') ? Mage::registry('current_category')->getName() : false;
             $eventData = [];
             $eventData['currency'] = Mage::app()->getStore()->getCurrentCurrencyCode();
-            $eventData['value'] = number_format($productViewed->getFinalPrice(), 2);
+            $eventData['value'] = $this->getPriceExclVAT($productViewed);
             $eventData['items'] = [];
             $eventData['items'][] = [
                 'item_id' => $productViewed->getSku(),
@@ -256,7 +263,7 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
                 'list_name' => 'Product Detail Page',
                 'item_brand' => $productViewed->getAttributeText('manufacturer'),
                 'item_category' => $category,
-                'price' => number_format($productViewed->getFinalPrice(), 2),
+                'price' => $this->getPriceExclVAT($productViewed),
             ];
 
             $result[] = "gtag('event', 'view_item', " . json_encode($eventData, JSON_THROW_ON_ERROR) . ");";
@@ -291,10 +298,10 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
                     'item_name' => $productViewed->getName(),
                     'item_brand' => $productViewed->getAttributeText('manufacturer'),
                     'item_category' => $productViewed->getCategory()->getName(),
-                    'price' => number_format($productViewed->getFinalPrice(), 2),
+                    'price' => $this->getPriceExclVAT($productViewed),
                 ];
                 $index++;
-                $eventData['value'] += $productViewed->getFinalPrice();
+                $eventData['value'] += $this->getPriceExclVAT($productViewed, false);
             }
             $eventData['value'] = number_format($eventData['value'], 2);
             $result[] = "gtag('event', 'view_item_list', " . json_encode($eventData, JSON_THROW_ON_ERROR) . ");";
@@ -313,7 +320,7 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
                     'item_id' => $_removedProduct->getSku(),
                     'item_name' => $_removedProduct->getName(),
                     'item_brand' => $_removedProduct->getAttributeText('manufacturer'),
-                    'price' => number_format($_removedProduct->getFinalPrice(), 2),
+                    'price' => $this->getPriceExclVAT($_removedProduct),
                 ];
                 $result[] = "gtag('event', 'remove_from_cart', " . json_encode($eventData, JSON_THROW_ON_ERROR) . ");";
                 Mage::getSingleton('core/session')->unsRemovedProductCart();
@@ -330,7 +337,7 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
                     'item_id' => $_addedProduct->getSku(),
                     'item_name' => $_addedProduct->getName(),
                     'item_brand' => $_addedProduct->getAttributeText('manufacturer'),
-                    'price' => number_format($_addedProduct->getFinalPrice(), 2),
+                    'price' => $this->getPriceExclVAT($_addedProduct),
                 ];
                 $result[] = "gtag('event', 'add_to_cart', " . json_encode($eventData, JSON_THROW_ON_ERROR) . ");";
                 Mage::getSingleton('core/session')->unsAddedProductCart();
@@ -348,9 +355,9 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
                     'item_id' => $_product->getSku(),
                     'item_name' => $_product->getName(),
                     'item_brand' => $_product->getAttributeText('manufacturer'),
-                    'price' => number_format($_product->getFinalPrice(), 2),
+                    'price' => $this->getPriceExclVAT($_product),
                 ];
-                $eventData['value'] += $_product->getFinalPrice();
+                $eventData['value'] += $this->getPriceExclVAT($_product, false);
             }
             $eventData['value'] = number_format($eventData['value'], 2);
             $result[] = "gtag('event', 'view_cart', " . json_encode($eventData, JSON_THROW_ON_ERROR) . ");";
@@ -370,9 +377,9 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
                         'item_id' => $_product->getSku(),
                         'item_name' => $_product->getName(),
                         'item_brand' => $_product->getAttributeText('manufacturer'),
-                        'price' => number_format($_product->getFinalPrice(), 2),
+                        'price' => $this->getPriceExclVAT($_product),
                     ];
-                    $eventData['value'] += $_product->getFinalPrice();
+                    $eventData['value'] += $this->getPriceExclVAT($_product, false);
                 }
                 $eventData['value'] = number_format($eventData['value'], 2);
                 $result[] = "gtag('event', 'begin_checkout', " . json_encode($eventData, JSON_THROW_ON_ERROR) . ");";
@@ -389,9 +396,9 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
                 $orderData = [
                     'currency' => $order->getBaseCurrencyCode(),
                     'transaction_id' => $order->getIncrementId(),
-                    'value' => number_format($order->getBaseGrandTotal(), 2),
+                    'value' => number_format($order->getBaseGrandTotal()-$order->getBaseTaxAmount(), 2),
                     'coupon' => strtoupper($order->getCouponCode()),
-                    'shipping' => number_format($order->getBaseShippingAmount(), 2),
+                    'shipping' => number_format($order->getBaseShippingAmount() - $order->getShippingTaxAmount(), 2),
                     'tax' => number_format($order->getBaseTaxAmount(), 2),
                     'items' => []
                 ];
@@ -402,7 +409,7 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
                         'item_id' => $item->getSku(),
                         'item_name' => $item->getName(),
                         'quantity' => $item->getQtyOrdered(),
-                        'price' => $item->getBasePrice(),
+                        'price' => $item->getBasePrice() - $item->getTaxAmount(),
                         'discount' => $item->getBaseDiscountAmount()
                     ];
                 }
@@ -411,7 +418,7 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
         }
 
         if ($this->helper('googleanalytics')->isDebugModeEnabled() && count($result) > 0) {
-            Mage::log($result, Zend_Log::DEBUG, 'googleanalytics4.log', true);
+            Mage::log(implode("\n", $result), Zend_Log::DEBUG, 'googleanalytics4.log', true);
         }
         return implode("\n", $result);
     }
