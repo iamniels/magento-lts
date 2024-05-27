@@ -1,28 +1,17 @@
 <?xml version="1.0"?>
 <!--
 /**
- * Magento
- *
- * NOTICE OF LICENSE
+ * OpenMage
  *
  * This source file is subject to the Academic Free License (AFL 3.0)
  * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magento.com so we can send you a copy immediately.
+ * It is also available at https://opensource.org/license/afl-3-0-php
  *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magento.com for more information.
- *
- * @category    Mage
- * @package     Mage_Usa
- * @copyright   Copyright (c) 2006-2020 Magento, Inc. (http://www.magento.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * @category   Mage
+ * @package    Mage_Usa
+ * @copyright  Copyright (c) 2006-2020 Magento, Inc. (https://www.magento.com)
+ * @copyright  Copyright (c) 2022 The OpenMage Contributors (https://www.openmage.org)
+ * @license    https://opensource.org/licenses/afl-3.0.php Academic Free License (AFL 3.0)
  */
 -->
 <config>
@@ -631,7 +620,7 @@
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
-                        0</sort_order>
+                            0</sort_order>
                     </fields>
                 </fedex>
                 <ups translate="label" module="usa">
@@ -724,13 +713,6 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </free_method>
-                        <gateway_url translate="label">
-                            <label>Gateway URL</label>
-                            <sort_order>40</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>0</show_in_store>
-                        </gateway_url>
                         <verify_peer translate="label">
                             <label>Enable SSL Verification</label>
                             <frontend_type>select</frontend_type>
@@ -748,6 +730,14 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </gateway_xml_url>
+                        <gateway_rest_url translate="label">
+                            <label>Gateway REST URL</label>
+                            <backend_model>adminhtml/system_config_backend_gatewayurl</backend_model>
+                            <sort_order>23</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </gateway_rest_url>
                         <tracking_xml_url translate="label">
                             <label>Tracking XML URL</label>
                             <backend_model>adminhtml/system_config_backend_gatewayurl</backend_model>
@@ -756,6 +746,14 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </tracking_xml_url>
+                        <tracking_rest_url translate="label">
+                            <label>Tracking REST URL</label>
+                            <backend_model>adminhtml/system_config_backend_gatewayurl</backend_model>
+                            <sort_order>25</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </tracking_rest_url>
                         <shipconfirm_xml_url translate="label">
                             <label>Shipping Confirm XML URL</label>
                             <backend_model>adminhtml/system_config_backend_gatewayurl</backend_model>
@@ -764,6 +762,14 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </shipconfirm_xml_url>
+                        <shipconfirm_rest_url translate="label">
+                            <label>Shipping Confirm REST URL</label>
+                            <backend_model>adminhtml/system_config_backend_gatewayurl</backend_model>
+                            <sort_order>26</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </shipconfirm_rest_url>
                         <shipaccept_xml_url translate="label">
                             <label>Shipping Accept XML URL</label>
                             <backend_model>adminhtml/system_config_backend_gatewayurl</backend_model>
@@ -824,6 +830,25 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
                         </origin_shipment>
+                        <client_id translate="label comment">
+                            <label>Client ID</label>
+                            <comment><![CDATA[To obtain your Client ID/Secret you have to:<br />- Register to <a href='https://developer.ups.com' target=_blank>https://developer.ups.com</a><br />- Go to My Apps -> Add Apps and fill all data<br />- Add Rating/Authorization/Shipping/TimeInTransit products to the app]]></comment>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>35</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </client_id>
+                        <client_secret translate="label">
+                            <label>Client Secret</label>
+                            <frontend_type>obscure</frontend_type>
+                            <backend_model>adminhtml/system_config_backend_encrypted</backend_model>
+                            <sort_order>38</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>0</show_in_store>
+                        </client_secret>
                         <password translate="label">
                             <label>Password</label>
                             <frontend_type>obscure</frontend_type>
@@ -1216,7 +1241,7 @@
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>0</show_in_store>
-                        0</sort_order>
+                            0</sort_order>
                     </fields>
                 </usps>
                 <dhlint translate="label" module="usa">
