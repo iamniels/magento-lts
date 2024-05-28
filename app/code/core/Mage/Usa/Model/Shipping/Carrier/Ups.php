@@ -2288,15 +2288,6 @@ XMLAuth;
                 "Code" => "{$params['48_container']}",
                 "Description" => "Packaging"
             ],
-            "Dimensions" => [
-                "UnitOfMeasurement" => [
-                    "Code" => "IN",
-                    "Description" => "Inches"
-                ],
-                "Length" => "5",
-                "Width" => "5",
-                "Height" => "5"
-            ],
             "PackageWeight" => [
                 "UnitOfMeasurement" => [
                     "Code" => "{$rowRequest->getUnitMeasure()}"
