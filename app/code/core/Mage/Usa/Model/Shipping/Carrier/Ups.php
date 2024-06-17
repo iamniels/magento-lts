@@ -2343,6 +2343,9 @@ XMLAuth;
             $rateResponseData = json_decode($rateResponse, true);
             if (@$rateResponseData['RateResponse']['Response']['ResponseStatus']['Description'] === 'Success') {
                 $arr = $rateResponseData['RateResponse']['RatedShipment'] ?? [];
+                if(isset($arr['Service'])){
+                    $arr = [$arr];
+                }
                 $allowedMethods = explode(",", $this->getConfigData('allowed_methods') ?? '');
                 $allowedCurrencies = Mage::app()->getStore()->getAvailableCurrencyCodes();
                 foreach ($arr as $shipElement) {
