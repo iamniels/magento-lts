@@ -106,10 +106,19 @@ gtag('config', '{$this->jsQuoteEscape($accountId)}', ". json_encode($config) .")
         //add user_id
         if ($this->helper('googleanalytics')->isUserIdEnabled() && Mage::getSingleton('customer/session')->isLoggedIn()) {
             $customer = Mage::getSingleton('customer/session')->getCustomer();
+
             $trackingCode.= "
 gtag('set', 'user_id', '{$customer->getId()}');
 ";
+            if($customer->getEmail()){
+                $emailHash = hash('sha256', $customer->getEmail());
+                $trackingCode.= "
+gtag('set', 'sha256_email_address', '$emailHash');
+";
+            }
         }
+
+
 
         if ($this->helper('googleanalytics')->isDebugModeEnabled()) {
             Mage::log($trackingCode, Zend_Log::DEBUG, 'googleanalytics4.log', true);
