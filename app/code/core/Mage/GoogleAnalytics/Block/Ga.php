@@ -21,6 +21,10 @@
  */
 class Mage_GoogleAnalytics_Block_Ga extends Mage_Core_Block_Template
 {
+    public function sha256Data($data)
+    {
+        return hash('sha256', mb_strtolower(trim($data)));
+    }
     /**
      * @deprecated after 1.4.1.1
      * @see self::_getOrdersTrackingCode()
@@ -111,10 +115,9 @@ gtag('config', '{$this->jsQuoteEscape($accountId)}', ". json_encode($config) .")
 gtag('set', 'user_id', '{$customer->getId()}');
 ";
             if($customer->getEmail()){
-                $emailHash = hash('sha256', $customer->getEmail());
                 $trackingCode.= "
-gtag('set', 'sha256_email_address', '$emailHash');
-";
+                gtag('set', 'user_data', " . json_encode(['sha256_email_address'=>$this->sha256Data($customer->getEmail())]) . ");
+                ";
             }
         }
 
@@ -397,6 +400,7 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
 
         //purchase events
         $orderIds = $this->getOrderIds();
+        $first = true;
         if (!empty($orderIds) && is_array($orderIds)) {
             $collection = Mage::getResourceModel('sales/order_collection')
                 ->addFieldToFilter('entity_id', ['in' => $orderIds]);
@@ -421,6 +425,13 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
                         'price' => $item->getBasePrice() - $item->getTaxAmount(),
                         'discount' => $item->getBaseDiscountAmount()
                     ];
+                }
+
+                if($first){
+                    $first = false;
+                    if($order->getCustomerEmail()){
+                        $result[] = "gtag('set', 'user_data', " . json_encode(['sha256_email_address'=>$this->sha256Data($order->getCustomerEmail())]) . ");";
+                    }
                 }
                 $result[] = "gtag('event', 'purchase', " . json_encode($orderData, JSON_THROW_ON_ERROR) . ");";
             }
