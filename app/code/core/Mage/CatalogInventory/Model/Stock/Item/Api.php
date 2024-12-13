@@ -87,10 +87,6 @@ class Mage_CatalogInventory_Model_Stock_Item_Api extends Mage_Catalog_Model_Api_
     {
         $product = Mage::getModel('catalog/product');
 
-        if ($newId = $product->getIdBySku($productId)) {
-            $productId = $newId;
-        }
-
         $product->setStoreId($this->_getStoreId())
             ->load($productId);
 
