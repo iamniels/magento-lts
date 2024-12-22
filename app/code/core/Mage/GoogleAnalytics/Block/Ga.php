@@ -433,6 +433,9 @@ _gaq.push(['_trackPageview'{$optPageURL}]);
                         $result[] = "gtag('set', 'user_data', " . json_encode(['sha256_email_address'=>$this->sha256Data($order->getCustomerEmail())]) . ");";
                     }
                 }
+                if($order->getCustomerEmail()){
+                    $orderData['sha256_email_address'] = $this->sha256Data($order->getCustomerEmail());
+                }
                 $result[] = "gtag('event', 'purchase', " . json_encode($orderData, JSON_THROW_ON_ERROR) . ");";
             }
         }
