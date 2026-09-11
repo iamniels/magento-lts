@@ -114,7 +114,7 @@ class Mage_Cms_Helper_Wysiwyg_Images extends Mage_Core_Helper_Abstract
     public function convertPathToId($path)
     {
         $storageRoot = realpath($this->getStorageRoot());
-        $path = str_replace($storageRoot, '', $path);
+        $path = ltrim(str_replace($storageRoot, '', $path), DS);
         return $this->idEncode($path);
     }
 
@@ -123,15 +123,22 @@ class Mage_Cms_Helper_Wysiwyg_Images extends Mage_Core_Helper_Abstract
      *
      * @param string $id
      * @return string
+     * @throws InvalidArgumentException
      */
     public function convertIdToPath($id)
     {
         $path = $this->idDecode($id);
-        $storageRoot = realpath($this->getStorageRoot());
-        if (!strstr($path, $storageRoot)) {
-            $path = $storageRoot . DS . $path;
+        if (!is_string($path)
+            || str_contains($path, chr(0))
+            || preg_match('#(^|[\\\\/])\\.\\.($|[\\\\/])#', $path)
+            || str_starts_with($path, '/')
+            || str_starts_with($path, '\\')
+            || preg_match('/^[a-z]:[\\\\\\/]/i', $path)
+        ) {
+            throw new InvalidArgumentException('Invalid WYSIWYG image path.');
         }
-        return $path;
+
+        return rtrim($this->getStorageRoot(), DS) . DS . $path;
     }
 
     /**
@@ -216,7 +223,11 @@ class Mage_Cms_Helper_Wysiwyg_Images extends Mage_Core_Helper_Abstract
             $node = $this->_getRequest()->getParam($this->getTreeNodeName());
             if ($node) {
                 $path = realpath($this->convertIdToPath($node));
-                if (is_dir($path) && false !== stripos($path, $currentPath)) {
+                $storageRoot = realpath($this->getStorageRoot());
+                $storageRoot = $storageRoot ? rtrim($storageRoot, DS) : false;
+                if ($path && is_dir($path) && $storageRoot
+                    && ($path === $storageRoot || str_starts_with($path, $storageRoot . DS))
+                ) {
                     $currentPath = $path;
                 }
             }

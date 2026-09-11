@@ -515,9 +515,9 @@ class Mage_Core_Model_App
             $this->_checkCookieStore($scopeType);
             $this->_checkGetStore($scopeType);
         }
-        $this->_useSessionInUrl = $this->getStore()->getConfig(
-            Mage_Core_Model_Session_Abstract::XML_PATH_USE_FRONTEND_SID
-        );
+        // Never render frontend session IDs into URLs. The legacy configuration may
+        // still be persisted as enabled during an upgrade, so it cannot control this.
+        $this->_useSessionInUrl = $this->getStore()->isAdmin();
         return $this;
     }
 

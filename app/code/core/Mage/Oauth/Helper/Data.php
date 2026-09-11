@@ -88,13 +88,18 @@ class Mage_Oauth_Helper_Data extends Mage_Core_Helper_Abstract
      */
     protected function _generateRandomString($length)
     {
+        $randomString = null;
         if (function_exists('openssl_random_pseudo_bytes')) {
-            // use openssl lib if it is install. It provides a better randomness
-            $bytes = openssl_random_pseudo_bytes(ceil($length/2), $strong);
-            $hex = bin2hex($bytes); // hex() doubles the length of the string
-            $randomString = substr($hex, 0, $length); // we truncate at most 1 char if length parameter is an odd number
-        } else {
-            // fallback to mt_rand() if openssl is not installed
+            // Use OpenSSL only when it reports a cryptographically strong result.
+            $bytes = openssl_random_pseudo_bytes((int) ceil($length / 2), $strong);
+            if ($bytes !== false && !empty($strong)) {
+                $hex = bin2hex($bytes); // hex() doubles the length of the string
+                $randomString = substr($hex, 0, $length); // truncate at most 1 char if length is odd
+            }
+        }
+
+        if ($randomString === null) {
+            // Use the core cryptographically secure generator if OpenSSL is unavailable or weak.
             /** @var Mage_Core_Helper_Data $helper */
             $helper = Mage::helper('core');
             $randomString = $helper->getRandomString(

@@ -676,14 +676,10 @@ class Mage_Usa_Model_Shipping_Carrier_Ups extends Mage_Usa_Model_Shipping_Carrie
      */
     protected function _getXmlQuotes()
     {
-        $url = $this->getConfigData('gateway_xml_url');
-        if (!$url) {
-            if ($this->getConfigFlag('mode_xml')) {
-                $url = $this->_liveUrls['Rate'];
-            } else {
-                $url = $this->_defaultUrls['Rate'];
-            }
-        }
+        $url = $this->_getEndpointUrl(
+            'gateway_xml_url',
+            $this->getConfigFlag('mode_xml') ? $this->_liveUrls['Rate'] : $this->_defaultUrls['Rate']
+        );
 
         $this->setXMLAccessRequest();
         $xmlRequest = $this->_xmlAccessRequest;
@@ -978,14 +974,10 @@ XMLAuth;
      */
     protected function _getXmlTracking($trackings)
     {
-        $url = $this->getConfigData('tracking_xml_url');
-        if (!$url) {
-            if ($this->getConfigFlag('mode_xml')) {
-                $url = $this->_liveUrls['Track'];
-            } else {
-                $url = $this->_defaultUrls['Track'];
-            }
-        }
+        $url = $this->_getEndpointUrl(
+            'tracking_xml_url',
+            $this->getConfigFlag('mode_xml') ? $this->_liveUrls['Track'] : $this->_defaultUrls['Track']
+        );
 
         foreach ($trackings as $tracking) {
             $xmlRequest = $this->_xmlAccessRequest;
@@ -1129,14 +1121,10 @@ XMLAuth;
      */
     protected function _getRestTracking($trackings)
     {
-        $url = $this->getConfigData('tracking_rest_url');
-        if (!$url) {
-            if ($this->getConfigFlag('mode_xml')) {
-                $url = $this->_liveUrls['TrackRest'] . '/';
-            } else {
-                $url = $this->_defaultUrls['TrackRest'] . '/';
-            }
-        }
+        $url = $this->_getEndpointUrl(
+            'tracking_rest_url',
+            $this->getConfigFlag('mode_xml') ? $this->_liveUrls['TrackRest'] . '/' : $this->_defaultUrls['TrackRest'] . '/'
+        );
 
         try {
             $accessToken = $this->setAPIAccessRequest();
@@ -1560,14 +1548,10 @@ XMLAuth;
         $xmlRequest->addChild('ShipmentDigest', $shipmentConfirmResponse->ShipmentDigest);
 
         $debugData = ['request' => $xmlRequest->asXML()];
-        $url = $this->getConfigData('shipaccept_xml_url');
-        if (!$url) {
-            if ($this->getConfigFlag('mode_xml')) {
-                $url = $this->_liveUrls['ShipAccept'];
-            } else {
-                $url = $this->_defaultUrls['ShipAccept'];
-            }
-        }
+        $url = $this->_getEndpointUrl(
+            'shipaccept_xml_url',
+            $this->getConfigFlag('mode_xml') ? $this->_liveUrls['ShipAccept'] : $this->_defaultUrls['ShipAccept']
+        );
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -1650,14 +1634,12 @@ XMLAuth;
         }
         $this->_debug(['request_quote' => $rawJsonRequest]);
 
-        $shipConfirmUrl = $this->getConfigData('shipconfirm_rest_url');
-        if (!$shipConfirmUrl) {
-            if ($this->getConfigFlag('mode_xml')) {
-                $shipConfirmUrl = $this->_liveUrls['ShipRestConfirm'];
-            } else {
-                $shipConfirmUrl = $this->_defaultUrls['ShipRestConfirm'];
-            }
-        }
+        $shipConfirmUrl = $this->_getEndpointUrl(
+            'shipconfirm_rest_url',
+            $this->getConfigFlag('mode_xml')
+                ? $this->_liveUrls['ShipRestConfirm']
+                : $this->_defaultUrls['ShipRestConfirm']
+        );
 
         /** Rest API Payload */
         $headers = [
@@ -1981,14 +1963,10 @@ XMLAuth;
         $xmlResponse = $this->_getCachedQuotes($xmlRequest);
 
         if ($xmlResponse === null) {
-            $url = $this->getConfigData('shipconfirm_xml_url');
-            if (!$url) {
-                if ($this->getConfigFlag('mode_xml')) {
-                    $url = $this->_liveUrls['ShipConfirm'];
-                } else {
-                    $url = $this->_defaultUrls['ShipConfirm'];
-                }
-            }
+            $url = $this->_getEndpointUrl(
+                'shipconfirm_xml_url',
+                $this->getConfigFlag('mode_xml') ? $this->_liveUrls['ShipConfirm'] : $this->_defaultUrls['ShipConfirm']
+            );
 
             $debugData = ['request' => $xmlRequest];
             $ch = curl_init();
@@ -2188,14 +2166,10 @@ XMLAuth;
      */
     protected function _getRestQuotes()
     {
-        $url = $this->getConfigData('gateway_rest_url');
-        if (!$url) {
-            if ($this->getConfigFlag('mode_xml')) {
-                $url = $this->_liveUrls['RateRest'] . '/';
-            } else {
-                $url = $this->_defaultUrls['RateRest'] . '/';
-            }
-        }
+        $url = $this->_getEndpointUrl(
+            'gateway_rest_url',
+            $this->getConfigFlag('mode_xml') ? $this->_liveUrls['RateRest'] . '/' : $this->_defaultUrls['RateRest'] . '/'
+        );
         try {
             $accessToken = $this->setAPIAccessRequest();
         } catch (Exception $e) {
@@ -2487,6 +2461,33 @@ XMLAuth;
                 $priceArr[$code] = $this->getMethodPrice((float)$cost, $code);
             }
         }
+    }
+
+    /**
+     * Resolve an administrator-configured UPS endpoint without allowing SSRF targets.
+     *
+     * @param string $configKey
+     * @param string $defaultUrl
+     * @return string
+     */
+    protected function _getEndpointUrl(string $configKey, string $defaultUrl): string
+    {
+        $url = (string) $this->getConfigData($configKey);
+        $parsed = parse_url($url);
+        $host = strtolower((string) ($parsed['host'] ?? ''));
+        $isUpsHost = $host === 'ups.com' || substr($host, -8) === '.ups.com';
+
+        if ($url === ''
+            || ($parsed['scheme'] ?? '') !== 'https'
+            || !$isUpsHost
+            || isset($parsed['user'])
+            || isset($parsed['pass'])
+            || isset($parsed['port'])
+        ) {
+            return $defaultUrl;
+        }
+
+        return $url;
     }
 
     /**

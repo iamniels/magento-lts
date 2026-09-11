@@ -531,10 +531,7 @@ class Mage_Usa_Model_Shipping_Carrier_Dhl
         if ($responseBody === null) {
             $debugData = array('request' => $request);
             try {
-                $url = $this->getConfigData('gateway_url');
-                if (!$url) {
-                    $url = $this->_defaultGatewayUrl;
-                }
+                $url = $this->_getGatewayUrl($this->_defaultGatewayUrl);
                 $ch = curl_init();
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
                 curl_setopt($ch, CURLOPT_URL, $url);
@@ -1030,10 +1027,7 @@ class Mage_Usa_Model_Shipping_Carrier_Dhl
          * DHL Airborne conduts a maintainance during that period.
          */
         try {
-            $url = $this->getConfigData('gateway_url');
-            if (!$url) {
-                $url = $this->_defaultGatewayUrl;
-            }
+            $url = $this->_getGatewayUrl($this->_defaultGatewayUrl);
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_URL, $url);

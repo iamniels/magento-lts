@@ -741,7 +741,7 @@ XML;
      */
     public function uniqHash($prefix = '')
     {
-        return $prefix . md5(uniqid(microtime().mt_rand(), true));
+        return $prefix . $this->getRandomString(32);
     }
 
     /**

@@ -187,7 +187,9 @@ class Mage_Core_Model_Session_Abstract extends Mage_Core_Model_Session_Abstract_
      */
     public function useSid()
     {
-        return Mage::app()->getStore()->isAdmin() || Mage::getStoreConfig(self::XML_PATH_USE_FRONTEND_SID);
+        // Frontend sessions must never be initialized from a session id in the URL.
+        // Keep SID support for the admin area, where it is required during login.
+        return Mage::app()->getStore()->isAdmin();
     }
 
     /**

@@ -115,6 +115,13 @@ class Mage_Usa_Model_Shipping_Carrier_Usps
     protected $_defaultGatewayUrl = 'https://production.shippingapis.com/ShippingAPI.dll';
 
     /**
+     * Default secure CGI gateway URL
+     *
+     * @var string
+     */
+    protected $_defaultSecureGatewayUrl = 'https://secure.shippingapis.com/ShippingAPI.dll';
+
+    /**
      * Container types that could be customized for USPS carrier
      *
      * @var array
@@ -413,10 +420,7 @@ class Mage_Usa_Model_Shipping_Carrier_Usps
         if ($responseBody === null) {
             $debugData = array('request' => $request);
             try {
-                $url = $this->getConfigData('gateway_url');
-                if (!$url) {
-                    $url = $this->_defaultGatewayUrl;
-                }
+                $url = $this->_getGatewayUrl('gateway_url');
                 $client = new Zend_Http_Client();
                 $client->setUri($url);
                 $client->setConfig(array('maxredirects' => 0, 'timeout' => 30));
@@ -964,10 +968,7 @@ class Mage_Usa_Model_Shipping_Carrier_Usps
              $debugData = array('request' => $request);
 
              try {
-                $url = $this->getConfigData('gateway_url');
-                if (!$url) {
-                    $url = $this->_defaultGatewayUrl;
-                }
+                $url = $this->_getGatewayUrl('gateway_url');
                 $client = new Zend_Http_Client();
                 $client->setUri($url);
                 $client->setConfig(array('maxredirects'=>0, 'timeout'=>30));
@@ -1067,6 +1068,42 @@ class Mage_Usa_Model_Shipping_Carrier_Usps
             $statuses = Mage::helper('usa')->__('Empty response');
         }
         return $statuses;
+    }
+
+    /**
+     * Resolve an administrator-configured USPS endpoint without allowing SSRF targets.
+     *
+     * @param string $configKey
+     * @return string
+     */
+    protected function _getGatewayUrl($configKey)
+    {
+        $defaultUrl = $configKey === 'gateway_secure_url'
+            ? $this->_defaultSecureGatewayUrl
+            : $this->_defaultGatewayUrl;
+        $url = (string) $this->getConfigData($configKey);
+        if (!$url) {
+            return $defaultUrl;
+        }
+
+        $parsed = parse_url($url);
+        $host = strtolower(isset($parsed['host']) ? $parsed['host'] : '');
+        if (!is_array($parsed)
+            || !isset($parsed['scheme'])
+            || $parsed['scheme'] !== 'https'
+            || !in_array($host, array('production.shippingapis.com', 'secure.shippingapis.com'), true)
+            || !isset($parsed['path'])
+            || $parsed['path'] !== '/ShippingAPI.dll'
+            || isset($parsed['user'])
+            || isset($parsed['pass'])
+            || isset($parsed['port'])
+            || isset($parsed['query'])
+            || isset($parsed['fragment'])
+        ) {
+            return $defaultUrl;
+        }
+
+        return $url;
     }
 
     /**
@@ -1787,10 +1824,7 @@ class Mage_Usa_Model_Shipping_Carrier_Usps
         }
 
         $debugData = array('request' => $requestXml);
-        $url = $this->getConfigData('gateway_secure_url');
-        if (!$url) {
-            $url = $this->_defaultGatewayUrl;
-        }
+        $url = $this->_getGatewayUrl('gateway_secure_url');
         $client = new Zend_Http_Client();
         $client->setUri($url);
         $client->setConfig(array('maxredirects'=>0, 'timeout'=>30));

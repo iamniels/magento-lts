@@ -836,7 +836,7 @@ class Mage_Usa_Model_Shipping_Carrier_Dhl_International
     protected function _getQuotesFromServer($request)
     {
         $client = new Varien_Http_Client();
-        $client->setUri((string)$this->getConfigData('gateway_url'));
+        $client->setUri($this->_getGatewayUrl('https://xmlpi-ea.dhl.com/XMLShippingServlet'));
         $client->setConfig(array(
             'maxredirects' => 0,
             'timeout' => 30,
@@ -1415,7 +1415,7 @@ class Mage_Usa_Model_Shipping_Carrier_Dhl_International
             $debugData = array('request' => $request);
             try {
                 $client = new Varien_Http_Client();
-                $client->setUri((string)$this->getConfigData('gateway_url'));
+                $client->setUri($this->_getGatewayUrl('https://xmlpi-ea.dhl.com/XMLShippingServlet'));
                 $client->setConfig(array(
                     'maxredirects' => 0,
                     'timeout' => 30,
@@ -1612,7 +1612,7 @@ class Mage_Usa_Model_Shipping_Carrier_Dhl_International
             $debugData = array('request' => $request);
             try {
                 $client = new Varien_Http_Client();
-                $client->setUri((string)$this->getConfigData('gateway_url'));
+                $client->setUri($this->_getGatewayUrl('https://xmlpi-ea.dhl.com/XMLShippingServlet'));
                 $client->setConfig(array(
                     'maxredirects' => 0,
                     'timeout' => 30,

@@ -34,6 +34,46 @@
 abstract class Mage_Usa_Model_Shipping_Carrier_Dhl_Abstract extends Mage_Usa_Model_Shipping_Carrier_Abstract
 {
     /**
+     * DHL endpoints that may be selected through shipping configuration.
+     *
+     * @var string[]
+     */
+    protected static $_allowedGatewayHosts = array(
+        'ecommerce.airborne.com',
+        'xmlpi-ea.dhl.com',
+        'xmlpitest-ea.dhl.com',
+    );
+
+    /**
+     * Resolve the configured DHL endpoint without allowing arbitrary SSRF targets.
+     *
+     * @param string $defaultUrl
+     * @return string
+     */
+    protected function _getGatewayUrl($defaultUrl)
+    {
+        $url = (string) $this->getConfigData('gateway_url');
+        if (!$url) {
+            return $defaultUrl;
+        }
+
+        $parsed = parse_url($url);
+        $host = strtolower(isset($parsed['host']) ? $parsed['host'] : '');
+        if (!is_array($parsed)
+            || !isset($parsed['scheme'])
+            || $parsed['scheme'] !== 'https'
+            || !in_array($host, self::$_allowedGatewayHosts, true)
+            || isset($parsed['user'])
+            || isset($parsed['pass'])
+            || isset($parsed['port'])
+        ) {
+            return $defaultUrl;
+        }
+
+        return $url;
+    }
+
+    /**
      * Response condition code for service is unavailable at the requested date
      */
     const CONDITION_CODE_SERVICE_DATE_UNAVAILABLE = 1003;
