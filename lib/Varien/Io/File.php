@@ -457,9 +457,17 @@ class Varien_Io_File extends Varien_Io_Abstract
      * @param int $mode
      *
      * @return int|boolean
+     * @throws Exception
      */
     public function write($filename, $src, $mode=null)
     {
+        // CVE-2021-41231: Reject traversal and NUL-byte paths before filesystem writes.
+        if (strpos($filename, chr(0)) !== false
+            || preg_match('#(^|[\\\\/])\\.\\.($|[\\\\/])#', $filename)
+        ) {
+            throw new Exception('Detected malicious path or filename input.');
+        }
+
         if (!$this->_IsValidSource($src) || !$this->_isFilenameWriteable($filename)) {
             return false;
         }

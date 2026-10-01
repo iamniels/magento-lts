@@ -525,6 +525,8 @@ class Mage_Widget_Model_Widget_Instance extends Mage_Core_Model_Abstract
             if (is_array($value)) {
                 $value = implode(',', $value);
             }
+            // CVE-2021-36022: Validate request-derived parameter names before generating layout XML.
+            $this->_validateWidgetParameterName($name);
             if ($name && strlen((string)$value)) {
                 $xml .= '<action method="setData">'
                     . '<name>' . $name . '</name>'
@@ -535,6 +537,22 @@ class Mage_Widget_Model_Widget_Instance extends Mage_Core_Model_Abstract
         $xml .= '</block></reference>';
 
         return $xml;
+    }
+
+    /**
+     * Validate a widget parameter name before interpolating it into layout XML.
+     *
+     * CVE-2021-36022.
+     *
+     * @param string $name
+     * @return void
+     * @throws Mage_Core_Exception
+     */
+    protected function _validateWidgetParameterName($name)
+    {
+        if (!preg_match('/^\\w+$/', (string)$name)) {
+            Mage::throwException(Mage::helper('widget')->__('Layout update is invalid.'));
+        }
     }
 
     /**

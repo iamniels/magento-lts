@@ -129,8 +129,10 @@ class Mage_Adminhtml_Cms_Wysiwyg_ImagesController extends Mage_Adminhtml_Control
             foreach ($files as $file) {
                 $file = $helper->idDecode($file);
                 $_filePath = realpath($path . DS . $file);
+                // CVE-2021-36036: Prevent media-gallery deletion of the protective .htaccess file.
                 if (strpos($_filePath, realpath($path)) === 0 &&
-                    strpos($_filePath, realpath($helper->getStorageRoot())) === 0
+                    strpos($_filePath, realpath($helper->getStorageRoot())) === 0 &&
+                    !preg_match('#.htaccess#', $file)
                 ) {
                     $this->getStorage()->deleteFile($path . DS . $file);
                 }

@@ -242,7 +242,14 @@ class Mage_Catalog_Model_Product_Option_Type_File extends Mage_Catalog_Model_Pro
         $this->_initFilesystem();
 
         if ($upload->isUploaded($file) && $upload->isValid($file)) {
+            // CVE-2021-36040: Apply the global protected-extension policy to new option uploads.
             $extension = pathinfo(strtolower($fileInfo['name']), PATHINFO_EXTENSION);
+            if ($this->_isProtectedFileExtension($extension)) {
+                $this->setIsValid(false);
+                Mage::throwException(
+                    Mage::helper('catalog')->__('The file extension "%s" is protected and cannot be uploaded.', $extension)
+                );
+            }
 
             $fileName = Mage_Core_Model_File_Uploader::getCorrectFileName($fileInfo['name']);
             $dispersion = Mage_Core_Model_File_Uploader::getDispretionPath($fileName);
@@ -326,7 +333,11 @@ class Mage_Catalog_Model_Product_Option_Type_File extends Mage_Catalog_Model_Pro
         }
 
         $fileFullPath = null;
+        // CVE-2021-36040: Do not restore protected file types from persisted quote/order paths.
         foreach ($checkPaths as $path) {
+            if ($this->_isProtectedFileExtension(pathinfo($path, PATHINFO_EXTENSION))) {
+                return false;
+            }
             if (!is_file($path)) {
                 if (!Mage::helper('core/file_storage_database')->saveFileToFilesystem($fileFullPath)) {
                     continue;
@@ -543,6 +554,21 @@ class Mage_Catalog_Model_Product_Option_Type_File extends Mage_Catalog_Model_Pro
         } else {
             return array();
         }
+    }
+
+    /**
+     * Check whether an uploaded custom-option file uses a protected extension.
+     *
+     * CVE-2021-36040.
+     *
+     * @param string $extension
+     * @return bool
+     */
+    protected function _isProtectedFileExtension($extension)
+    {
+        /** @var Mage_Core_Model_File_Validator_NotProtectedExtension $validator */
+        $validator = Mage::getSingleton('core/file_validator_notProtectedExtension');
+        return !$validator->isValid($extension);
     }
 
     /**

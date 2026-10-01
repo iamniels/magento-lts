@@ -369,9 +369,19 @@ class Mage_Cms_Model_Wysiwyg_Images_Storage extends Varien_Object
      */
     public function resizeFile($source, $keepRation = true)
     {
-        if (!is_file($source) || !is_readable($source)) {
+        // CVE-2022-34254: The thumbnail endpoint receives a decoded filename.
+        // Canonicalize it and require the source to remain below the WYSIWYG storage root so that
+        // traversal (including symlink traversal) cannot read another media file.
+        $storageRoot = realpath($this->getHelper()->getStorageRoot());
+        $sourcePath = realpath($source);
+        $storageRoot = $storageRoot ? rtrim($storageRoot, DS) : false;
+        if (!$storageRoot || !$sourcePath
+            || strpos($sourcePath, $storageRoot . DS) !== 0
+            || !is_file($sourcePath) || !is_readable($sourcePath)
+        ) {
             return false;
         }
+        $source = $sourcePath;
 
         $targetDir = $this->getThumbsPath($source);
         $io = new Varien_Io_File();

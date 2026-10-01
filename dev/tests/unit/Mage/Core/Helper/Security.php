@@ -70,6 +70,12 @@ class Security extends TestCase
                 'Mage_Core_Block_Template::fetchView',
                 []
             ],
+            // CVE-2021-39217: Qualified inherited method names must also hit the blacklist.
+            'parent class name is passed for inherited method' => [
+                $topmenu,
+                'Mage_Core_Block_Template::render',
+                []
+            ],
         ];
     }
 

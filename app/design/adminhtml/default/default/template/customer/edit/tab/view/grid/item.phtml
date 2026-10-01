@@ -39,7 +39,8 @@
         <?php foreach ($options as $option) : ?>
             <dt><?php echo $this->escapeHtml($option['label']) ?></dt>
             <?php $formatedOptionValue = $this->getFormattedOptionValue($option) ?>
-            <dd><?php echo $formatedOptionValue['value'] ?></dd>
+            <?php /* CVE-2025-24413: Escape customer-controlled option values in the admin customer view. */ ?>
+            <dd><?php echo $this->escapeHtml($formatedOptionValue['value'], array('br')) ?></dd>
         <?php endforeach ?>
     </dl>
 </div>

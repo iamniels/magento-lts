@@ -81,6 +81,127 @@ class Mage_Downloadable_Helper_Download extends Mage_Core_Helper_Abstract
     protected $_fileName        = 'download';
 
     /**
+     * Return a resolved public address for a remote download host.
+     *
+     * CVE-2024-34111.
+     *
+     * @param array $urlProp Parsed URL components
+     * @return string
+     * @throws Mage_Core_Exception
+     */
+    protected function _getSafeRemoteHost(array $urlProp)
+    {
+        if (!isset($urlProp['host']) || $urlProp['host'] === ''
+            || isset($urlProp['user']) || isset($urlProp['pass'])) {
+            Mage::throwException(Mage::helper('downloadable')->__('Invalid download URL host.'));
+        }
+
+        $host = $urlProp['host'];
+        if (substr($host, 0, 1) === '[' && substr($host, -1) === ']') {
+            $host = substr($host, 1, -1);
+        }
+        $addresses = array();
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            $addresses[] = $host;
+        } elseif (function_exists('dns_get_record')) {
+            $recordTypes = 0;
+            if (defined('DNS_A')) {
+                $recordTypes |= DNS_A;
+            }
+            if (defined('DNS_AAAA')) {
+                $recordTypes |= DNS_AAAA;
+            }
+            if ($recordTypes) {
+                $records = @dns_get_record($host, $recordTypes);
+                if (is_array($records)) {
+                    foreach ($records as $record) {
+                        if (isset($record['ip'])) {
+                            $addresses[] = $record['ip'];
+                        } elseif (isset($record['ipv6'])) {
+                            $addresses[] = $record['ipv6'];
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!$addresses && function_exists('gethostbynamel')) {
+            $resolved = @gethostbynamel($host);
+            if (is_array($resolved)) {
+                $addresses = $resolved;
+            }
+        }
+
+        $addresses = array_values(array_unique($addresses));
+        if (!$addresses) {
+            Mage::throwException(Mage::helper('downloadable')->__('Unable to resolve download URL host.'));
+        }
+
+        foreach ($addresses as $address) {
+            if (!$this->_isPublicRemoteAddress($address)) {
+                Mage::throwException(Mage::helper('downloadable')->__('Download URL host resolves to a restricted address.'));
+            }
+        }
+
+        // Connect to the validated address rather than resolving the hostname again.
+        return $addresses[0];
+    }
+
+    /**
+     * Check whether an address is globally routable (not local or reserved).
+     *
+     * CVE-2024-34111.
+     *
+     * @param string $address
+     * @return bool
+     */
+    protected function _isPublicRemoteAddress($address)
+    {
+        $packed = @inet_pton($address);
+        if ($packed === false) {
+            return false;
+        }
+
+        if (strlen($packed) === 4) {
+            $parts = array_map('intval', explode('.', $address));
+            if (count($parts) !== 4) {
+                return false;
+            }
+            $first = $parts[0];
+            $second = $parts[1];
+            return $first !== 0 && $first !== 10 && $first !== 127
+                && $first < 224
+                && !($first === 100 && $second >= 64 && $second <= 127)
+                && !($first === 169 && $second === 254)
+                && !($first === 172 && $second >= 16 && $second <= 31)
+                && !($first === 192 && in_array($second, array(0, 2, 88, 168), true))
+                && !($first === 198 && in_array($second, array(18, 19, 51), true))
+                && !($first === 203 && $second === 0);
+        }
+
+        // IPv4-mapped IPv6 addresses must receive the IPv4 restrictions too.
+        if (substr($packed, 0, 12) === str_repeat("\0", 10) . "\xff\xff") {
+            return $this->_isPublicRemoteAddress(inet_ntop(substr($packed, 12)));
+        }
+
+        $bytes = array_values(unpack('C*', $packed));
+        $allZero = true;
+        foreach ($bytes as $byte) {
+            if ($byte !== 0) {
+                $allZero = false;
+                break;
+            }
+        }
+        return !$allZero
+            && !($bytes[15] === 1 && array_sum(array_slice($bytes, 0, 15)) === 0)
+            && ($bytes[0] & 0xfe) !== 0xfc
+            && !($bytes[0] === 0xfe && ($bytes[1] & 0xc0) === 0x80)
+            && $bytes[0] !== 0xff
+            && !($bytes[0] === 0x20 && $bytes[1] === 0x01
+                && $bytes[2] === 0x0d && $bytes[3] === 0xb8);
+    }
+
+    /**
      * Retrieve Resource file handle (socket, file pointer etc)
      *
      * @return resource
@@ -98,27 +219,28 @@ class Mage_Downloadable_Helper_Download extends Mage_Core_Helper_Abstract
                  * Validate URL
                  */
                 $urlProp = parse_url($this->_resourceFile);
-                if (!isset($urlProp['scheme'])
-                    || strtolower($urlProp['scheme'] != 'http') && strtolower($urlProp['scheme'] != 'https')) {
+                // CVE-2024-34111: Restrict remote downloads to validated HTTP(S) destinations.
+                $urlScheme = isset($urlProp['scheme']) ? strtolower($urlProp['scheme']) : '';
+                if (!in_array($urlScheme, array('http', 'https'), true)) {
                     Mage::throwException(Mage::helper('downloadable')->__('Invalid download URL scheme.'));
                 }
                 if (!isset($urlProp['host'])) {
                     Mage::throwException(Mage::helper('downloadable')->__('Invalid download URL host.'));
                 }
-                switch ($urlProp['scheme']) {
-                    case 'https':
-                        $scheme = 'ssl://';
-                        $port = 443;
-                        break;
-                    case 'http':
-                    default:
-                        $scheme = '';
-                        $port = 80;
+                $port = $urlScheme === 'https' ? 443 : 80;
+                // Resolve the destination before opening a socket. Download URLs may be
+                // supplied through the catalog API, so do not allow them to target local,
+                // private, link-local, or otherwise reserved address space.
+                $connectHost = $this->_getSafeRemoteHost($urlProp);
+                if (strpos($connectHost, ':') !== false) {
+                    $connectHost = '[' . $connectHost . ']';
                 }
-                $hostname = $scheme . $urlProp['host'];
 
                 if (isset($urlProp['port'])) {
                     $port = (int)$urlProp['port'];
+                    if ($port < 1 || $port > 65535) {
+                        Mage::throwException(Mage::helper('downloadable')->__('Invalid download URL port.'));
+                    }
                 }
 
                 $path = '/';
@@ -130,10 +252,35 @@ class Mage_Downloadable_Helper_Download extends Mage_Core_Helper_Abstract
                     $query = '?' . $urlProp['query'];
                 }
 
-                try {
-                    $this->_handle = fsockopen($hostname, $port, $errno, $errstr);
-                } catch (Exception $e) {
-                    throw $e;
+                $errno = 0;
+                $errstr = '';
+                if ($urlScheme === 'https') {
+                    // CVE-2024-34111: Pin the validated address while retaining the original hostname for
+                    // SNI and certificate verification.
+                    $peerName = trim($urlProp['host'], '[]');
+                    $context = stream_context_create(array(
+                        'ssl' => array(
+                            'peer_name' => $peerName,
+                            'SNI_enabled' => true,
+                            'SNI_server_name' => $peerName,
+                            'verify_peer' => true,
+                            'verify_peer_name' => true,
+                        ),
+                    ));
+                    $timeout = (float) ini_get('default_socket_timeout');
+                    if ($timeout <= 0) {
+                        $timeout = 60;
+                    }
+                    $this->_handle = @stream_socket_client(
+                        'ssl://' . $connectHost . ':' . $port,
+                        $errno,
+                        $errstr,
+                        $timeout,
+                        STREAM_CLIENT_CONNECT,
+                        $context
+                    );
+                } else {
+                    $this->_handle = @fsockopen($connectHost, $port, $errno, $errstr);
                 }
 
                 if ($this->_handle === false) {

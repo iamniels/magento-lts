@@ -22,9 +22,11 @@ class Mage_Core_Helper_Security
     {
         foreach ($this->invalidBlockActions as $action) {
             $calledMethod = strtolower($method);
-            if (($block instanceof $action['block'] && strtolower($action['method']) === $calledMethod)
-                || ($block instanceof $action['block']
-                    && strtolower($action['block'] . '::' . $action['method']) === $calledMethod)) {
+            // CVE-2021-39217: Normalize class-qualified callbacks before blacklist comparison.
+            if (strpos($calledMethod, '::') !== false) {
+                $calledMethod = explode('::', $calledMethod, 2)[1];
+            }
+            if ($block instanceof $action['block'] && strtolower($action['method']) === $calledMethod) {
                 Mage::throwException(
                     sprintf('Action with combination block %s and method %s is forbidden.', get_class($block), $method)
                 );

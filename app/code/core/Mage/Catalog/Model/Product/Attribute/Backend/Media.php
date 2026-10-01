@@ -286,6 +286,13 @@ class Mage_Catalog_Model_Product_Attribute_Backend_Media extends Mage_Eav_Model_
         $move = false,
         $exclude = true
     ) {
+        // CVE-2021-41231: Reject traversal and NUL-byte paths before canonicalizing imported media.
+        if (strpos($file, chr(0)) !== false
+            || preg_match('#(^|[\\\\/])\\.\\.($|[\\\\/])#', $file)
+        ) {
+            throw new Exception('Detected malicious path or filename input.');
+        }
+
         $file = realpath($file);
 
         if (!$file || !file_exists($file)) {

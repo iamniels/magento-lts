@@ -112,6 +112,8 @@ class Mage_Sales_Helper_Guest extends Mage_Core_Helper_Data
                     $errors = true;
                 }
             } else {
+                // CVE-2023-41879: Record failed guest-order protection-code guesses.
+                Mage::helper('core')->recordRateLimitHit();
                 $errors = true;
             }
         }
@@ -121,7 +123,10 @@ class Mage_Sales_Helper_Guest extends Mage_Core_Helper_Data
             return true;
         }
 
-        Mage::getSingleton('core/session')->addError($this->__($errorMessage));
+        // CVE-2023-41879: Throttle repeated guest-order lookup failures by client address.
+        if (!Mage::helper('core')->isRateLimitExceeded(true, false)) {
+            Mage::getSingleton('core/session')->addError($this->__($errorMessage));
+        }
         Mage::app()->getResponse()->setRedirect(Mage::getUrl('sales/guest/form'));
         return false;
     }
