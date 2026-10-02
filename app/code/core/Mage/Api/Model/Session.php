@@ -48,7 +48,8 @@ class Mage_Api_Model_Session extends Mage_Core_Model_Session_Abstract
     public function start($sessionName = null)
     {
 //        parent::start($sessionName=null);
-        $this->_currentSessId = md5(time() . uniqid('', true) . $sessionName);
+        // CVE-2026-42155: Use 128-bit CSPRNG entropy while retaining the 32-character API ID format.
+        $this->_currentSessId = bin2hex(random_bytes(16));
         $this->sessionIds[] = $this->getSessionId();
         return $this;
     }
